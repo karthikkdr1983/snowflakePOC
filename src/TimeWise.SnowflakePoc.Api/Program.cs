@@ -10,6 +10,10 @@ using TimeWise.SnowflakePoc.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// POC: read user-secrets (account, key passphrase) however the app is started, not only in Development.
+// In Azure, App Service settings / Key Vault take over and this is a no-op.
+builder.Configuration.AddUserSecrets<Program>(optional: true);
+
 // ---- Configuration (validated at startup so a bad config fails fast with a clear message) ----
 builder.Services.AddOptions<SnowflakeOptions>().BindConfiguration(SnowflakeOptions.SectionName)
     .ValidateDataAnnotations().ValidateOnStart();

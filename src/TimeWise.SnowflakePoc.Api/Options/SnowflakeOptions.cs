@@ -11,7 +11,9 @@ public sealed class SnowflakeOptions
     public const string SectionName = "Snowflake";
 
     /// <summary>Account identifier, e.g. ABCDEFG-XY12345 (ORGNAME-ACCOUNTNAME).</summary>
-    [Required] public string Account { get; set; } = "";
+    [Required(ErrorMessage = "Snowflake:Account is not set. Run: dotnet user-secrets set \"Snowflake:Account\" \"ORGNAME-ACCOUNTNAME\" " +
+                             "--project src\\TimeWise.SnowflakePoc.Api (or set it in appsettings.Development.json and run with ASPNETCORE_ENVIRONMENT=Development).")]
+    public string Account { get; set; } = "";
 
     /// <summary>Optional host override (e.g. a PrivateLink host). Leave empty to derive from Account.</summary>
     public string? Host { get; set; }
