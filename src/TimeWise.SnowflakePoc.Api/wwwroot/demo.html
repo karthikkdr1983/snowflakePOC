@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TimeWise Directory Demo</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --border: #e1e4e8; --text: #1f2328; --muted: #5d6670;
+    --accent: #0f6cbd; --accent-soft: #e8f1fb; --ok: #1a7f37; --ok-soft: #e6f4ea;
+    --warn: #9a6700; --warn-soft: #fff4d6; --err: #c42b1c; --err-soft: #fde7e5;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181b; --surface: #1f2226; --border: #30353b; --text: #e8eaed; --muted: #9aa3ad;
+      --accent: #4ea1f3; --accent-soft: #1c2b3b; --ok: #4ac26b; --ok-soft: #17301f;
+      --warn: #d8a531; --warn-soft: #33290f; --err: #ff7b72; --err-soft: #3a1d1b;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--accent); color: #fff; padding: 14px 24px; display: flex;
+           align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+  header .sub { opacity: .85; font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+          box-shadow: var(--shadow); padding: 16px 18px; min-width: 0; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .toolbar label { color: var(--muted); }
+  select, input, button { font: inherit; color: inherit; }
+  select, input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+                  padding: 7px 10px; min-width: 0; }
+  select { max-width: 100%; flex: 1 1 320px; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px;
+           cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+          font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.err { background: var(--err-soft); color: var(--err); }
+  .pill.info { background: var(--accent-soft); color: var(--accent); }
+  .pill.header { background: rgba(255,255,255,.18); color: #fff; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .person { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+            display: grid; place-items: center; font-weight: 700; font-size: 18px; flex: none; }
+  .avatar.sm { width: 34px; height: 34px; font-size: 13px; }
+  .name { font-size: 18px; font-weight: 600; }
+  .muted { color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  ul.team { list-style: none; margin: 0; padding: 0; }
+  ul.team li { display: flex; gap: 12px; align-items: center; padding: 9px 4px; border-top: 1px solid var(--border); }
+  ul.team li:first-child { border-top: 0; }
+  ul.team .who { min-width: 0; }
+  ul.team .who div { overflow-wrap: anywhere; }
+  .empty, .error { padding: 18px; border-radius: 6px; text-align: center; }
+  .empty { background: var(--bg); color: var(--muted); }
+  .error { background: var(--err-soft); color: var(--err); text-align: left; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; border-top: 0; }
+  .log-wrap { overflow-x: auto; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TimeWise</h1>
+  <span class="sub">Employee directory · live from Snowflake</span>
+  <span style="flex:1"></span>
+  <span id="health" class="pill header"><span class="dot"></span>Checking Snowflake…</span>
+</header>
+
+<main>
+  <section class="card">
+    <div class="toolbar">
+      <label for="user">Signed in as</label>
+      <select id="user" disabled><option>Loading users from Snowflake…</option></select>
+      <button id="reload" disabled title="Call the API again to show the cache">Call API again</button>
+      <a href="/swagger" class="muted" style="margin-left:auto">Swagger ↗</a>
+    </div>
+    <div class="hint">POC: the user is simulated with the <code>X-Test-User-Email</code> header. In production, SharePoint passes the signed-in user's Entra ID token.</div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>My profile <span id="profile-badge"></span></h2>
+      <div id="profile"><div class="empty">Pick a user above.</div></div>
+    </section>
+    <section class="card">
+      <h2>My team <span id="team-count" class="muted"></span> <span id="team-badge"></span></h2>
+      <div id="team"><div class="empty">Pick a user above.</div></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>API calls</h2>
+    <div class="log-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Request</th><th>Status</th><th>Source</th><th>Duration</th></tr></thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const HEADER = 'X-Test-User-Email';
+
+  function el(tag, attrs, ...children) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === 'class') node.className = v; else node.setAttribute(k, v);
+    }
+    for (const c of children) if (c != null) node.append(c instanceof Node ? c : String(c));
+    return node;
+  }
+  const initials = (e) => ((e.firstName || '?')[0] + (e.lastName || '?')[0]).toUpperCase();
+
+  async function call(path, email) {
+    const headers = email ? { [HEADER]: email } : {};
+    const started = performance.now();
+    let res, body = null, error = null;
+    try {
+      res = await fetch(path, { headers });
+      const text = await res.text();
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+    } catch (e) { error = e; }
+    const ms = Math.round(performance.now() - started);
+    const cache = res ? res.headers.get('X-Cache') : null;
+    logRow(path, res ? res.status : 'network error', cache, ms);
+    return { ok: !!res && res.ok, status: res ? res.status : 0, body, cache, ms, error };
+  }
+
+  function sourcePill(cache, ms) {
+    if (cache === 'HIT') return el('span', { class: 'pill ok' }, 'Cache · ' + ms + ' ms');
+    if (cache === 'MISS') return el('span', { class: 'pill info' }, 'Snowflake · ' + ms + ' ms');
+    return el('span', { class: 'pill info' }, ms + ' ms');
+  }
+
+  function logRow(path, status, cache, ms) {
+    const ok = typeof status === 'number' && status < 400;
+    const tr = el('tr', {},
+      el('td', {}, new Date().toLocaleTimeString()),
+      el('td', {}, el('code', {}, 'GET ' + path)),
+      el('td', {}, el('span', { class: 'pill ' + (ok ? 'ok' : 'err') }, status)),
+      el('td', {}, cache === 'HIT' ? 'Cache' : cache === 'MISS' ? 'Snowflake' : '–'),
+      el('td', {}, ms + ' ms'));
+    $('log').prepend(tr);
+    while ($('log').children.length > 12) $('log').lastChild.remove();
+  }
+
+  function problem(r) {
+    const b = r.body || {};
+    const title = (b && b.title) || (r.error ? 'Could not reach the API' : 'HTTP ' + r.status);
+    const detail = (b && b.detail) || (r.error ? String(r.error) : '');
+    return el('div', { class: 'error' }, el('strong', {}, title), detail ? el('div', {}, detail) : null,
+      b && b.hint ? el('div', { style: 'margin-top:6px' }, '💡 ' + b.hint) : null);
+  }
+
+  function renderProfile(r) {
+    const box = $('profile'); box.replaceChildren();
+    $('profile-badge').replaceChildren(sourcePill(r.cache, r.ms));
+    if (!r.ok) { box.append(problem(r)); return; }
+    const e = r.body;
+    const fmtDate = e.hireDate ? new Date(e.hireDate + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '–';
+    box.append(
+      el('div', { class: 'person' },
+        el('div', { class: 'avatar' }, initials(e)),
+        el('div', {}, el('div', { class: 'name' }, e.displayName), el('div', { class: 'muted' }, e.jobTitle || ''))),
+      el('dl', {},
+        el('dt', {}, 'Employee ID'), el('dd', {}, e.employeeId),
+        el('dt', {}, 'Email'), el('dd', {}, e.email),
+        el('dt', {}, 'Department'), el('dd', {}, e.department || '–'),
+        el('dt', {}, 'Location'), el('dd', {}, e.location || '–'),
+        el('dt', {}, 'Cost centre'), el('dd', {}, e.costCentre || '–'),
+        el('dt', {}, 'Manager'), el('dd', {}, e.managerName ? e.managerName + ' (' + e.managerEmail + ')' : '–'),
+        el('dt', {}, 'Hire date'), el('dd', {}, fmtDate)));
+  }
+
+  function renderTeam(r) {
+    const box = $('team'); box.replaceChildren();
+    $('team-badge').replaceChildren(sourcePill(r.cache, r.ms));
+    $('team-count').textContent = '';
+    if (!r.ok) { box.append(problem(r)); return; }
+    const reports = r.body.directReports || [];
+    $('team-count').textContent = '(' + reports.length + ')';
+    if (reports.length === 0) {
+      box.append(el('div', { class: 'empty' }, 'No direct reports. This user has no timesheets to approve.'));
+      return;
+    }
+    const ul = el('ul', { class: 'team' });
+    for (const e of reports) {
+      ul.append(el('li', {},
+        el('div', { class: 'avatar sm' }, initials(e)),
+        el('div', { class: 'who' },
+          el('div', {}, el('strong', {}, e.displayName), ' · ', el('span', { class: 'muted' }, e.jobTitle || '')),
+          el('div', { class: 'muted' }, e.email + ' · ' + (e.location || '')))));
+    }
+    box.append(ul);
+  }
+
+  async function loadUser() {
+    const email = $('user').value;
+    if (!email) return;
+    $('reload').disabled = true;
+    // Sequential on purpose: the team call reuses the profile the first call just cached.
+    renderProfile(await call('/api/me/profile', email));
+    renderTeam(await call('/api/me/team', email));
+    $('reload').disabled = false;
+  }
+
+  async function loadHealth() {
+    const pill = $('health');
+    const r = await call('/health/snowflake');
+    pill.replaceChildren(el('span', { class: 'dot' }));
+    if (r.ok) {
+      const s = r.body.session || {};
+      pill.className = 'pill ok';
+      pill.append('Connected · ' + s.currentUser + ' · ' + s.currentRole + ' · ' + s.currentWarehouse);
+    } else {
+      pill.className = 'pill err';
+      pill.title = (r.body && r.body.detail) || '';
+      pill.append('Snowflake unavailable (' + (r.status || 'network') + ')');
+    }
+  }
+
+  async function loadUsers() {
+    const r = await call('/api/demo/users');
+    const select = $('user');
+    select.replaceChildren();
+    if (!r.ok) {
+      select.append(el('option', { value: '' }, 'Could not load users: ' + ((r.body && r.body.title) || r.status)));
+      $('profile').replaceChildren(problem(r));
+      return;
+    }
+    select.append(el('option', { value: '' }, '— choose a user —'));
+    for (const e of r.body) {
+      select.append(el('option', { value: e.email }, e.displayName + ' — ' + (e.jobTitle || '') + ' (' + e.email + ')'));
+    }
+    select.append(el('option', { value: 'not.an.employee@timewise-demo.com' }, 'Unknown user (not in Snowflake) — shows 404'));
+    select.disabled = false;
+  }
+
+  $('user').addEventListener('change', loadUser);
+  $('reload').addEventListener('click', loadUser);
+  loadHealth().then(loadUsers);
+})();
+</script>
+</body>
+</html>
